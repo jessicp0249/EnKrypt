@@ -39,20 +39,35 @@ public:
     // Checks whether input can be converted to ESymbols
     bool can_convert(QString input);
 
-    // Returns index of the first ESymbol* in m_symbols with the given color
+    // Returns index of the first ESymbol* in m_symbols of the given color
     int first_of_color(int color);
     // Searches from the given index to the end of m_symbols for the first ESymbol*
     // with the given color
     int first_of_color_after(int color, int index);
+    // Searches from the end of m_symbols for an ESymbol* of the given color
+    int last_of_color(int color);
+
+    // Gets last item in vector of the given color and moves it to end of vector
+    void set_last_item(int color);
+
     // Mixes the ESymbols* in m_symbols together
     void scramble();
     // Moves ESymbols* to their original position in m_symbols
     void unscramble();
     // Scramble the ESymbols in the range from begin to range1_end with the ESymbols
     // in the range from range2_begin and end
+//    void merge_ranges(int begin, int range2_begin, int end);
+
+    void mix_colors_evenly();
+    void make_uneven();
 
     int random_color(int color=0);
-//    void merge_ranges(int begin, int range2_begin, int end);
+    void swap_items(int first, int second);
+
+    // @param iteration Increments each time function recurses, so that
+    // function can prevent endless recursion
+    void swap_random_index(int iteration=0);
+    void move_to_end(int index);
 
     // Copies last element of the given vector to the given index of m_symbols,
     // and then removes that element from the first vector
