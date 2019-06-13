@@ -73,32 +73,38 @@ QString EString::format(QString text)
 
 void EString::set_colors()
 {
-    int color=COLOR_COUNT;	// Current color
+    int color=1;	// Current color
     // Number of ESymbols to be assigned per color
     int interval=m_symbols.size()/COLOR_COUNT;
+    // Interval must be at least one
+    if(interval<1) interval=1;
+    // If items in m_symbols don't divide evenly among colors,
+    // increase interval to distribute remainder
+    if(m_symbols.size()%COLOR_COUNT>0) interval++;
 
     // Assign each color to about the same number of ESymbols
-    for(int i=m_symbols.size()-1; i>=0; i--)
+    for(int i=0; i<m_symbols.size(); i++)
     {
         // Assign current color to current item in m_symbols
         m_symbols[i]->set_color(color);
         // If current color has been assigned to enough ESymbols,
         // and last color has not been reached, change current color
-        if(i%interval==0 && color>1)
+        if((i+1)%interval==0 && color<COLOR_COUNT)
         {
-            color--;
-            // If m_symbols doesn't divide evenly among the colors,
-            // extend interval by one to distribute leftover ESymbols.
+            color++;
+            // If remainder items have been distributed, decrease interval.
             // (This operation will occur at most ONCE per function call.)
-//            if(color==(m_symbols.size()%COLOR_COUNT)) interval++;
+            if(color==(m_symbols.size()%interval))
+                interval--;
         }
     }
+QMessageBox::information(nullptr,"",color_listing());
 }
 
 bool EString::can_convert(QString input)
 {
     // If formatted input is not empty, input can be converted
-    if( format(input)!="") return true;
+    if(format(input).size()>0) return true;
     else return false;
 }
 
@@ -110,6 +116,7 @@ int EString::first_of_color(int color)
 
 int EString::first_of_color_after(int color, int index)
 {
+#if 0
     int match=-1;	// Default signals that no match was found
 
     // Go through every ESymbol* in m_symbols
@@ -122,21 +129,24 @@ int EString::first_of_color_after(int color, int index)
         i++;
     }
     return match;
+#endif
+
+    for(int i=index; i<m_symbols.size(); i++)
+    {
+        if(m_symbols[i]->get_color()==color)
+            return i;
+    }
+    return -1;
 }
 
 int EString::last_of_color(int color)
 {
-    int match=-1;	// Default signals that no match was found
-    // Go through every ESymbol* in m_symbols, moving backward
-    int i=m_symbols.size()-1;
-     while(i>=0 && match==-1)
+    for(int i=m_symbols.size()-1; i>=0; i--)
     {
-        // If current symbol is the right color...
         if(m_symbols[i]->get_color()==color)
-            match=i;	// Assign current index to variable index
-        i++;
+            return i;
     }
-     return match;
+    return -1;
 }
 
 void EString::set_last_item(int color)
@@ -147,11 +157,168 @@ void EString::set_last_item(int color)
 
 void EString::scramble()
 {
+    if(m_symbols.size()<COLOR_COUNT) return;
+
     mix_colors_evenly();
     set_last_item(COLOR_COUNT);
     make_uneven();
+}
+
+// Unfinished function (not tested for bugs)
+void EString::unscramble()
+{
+    // Create new vector the same size as m_symbols
+    QVector<ESymbol*> sorted(m_symbols.size());
+
+    // Copy items of each color to sorted
+    for(int i=1; i<=COLOR_COUNT; i++)
+        copy_color_to(sorted,i);
+
+    // Copy sorted vector to m_symbols
+    m_symbols=sorted;
+}
+
+void EString::copy_color_to(QVector<ESymbol *> &vect, int color)
+{
+QMessageBox::information(nullptr,"","Copying color "+QString::number(color));
+    ESymbol* filler=new ESymbol;
+    int index=0;
+     // Add each red ESymbol* from m_symbols to sorted
+    while(index>=0)
+    {
+        index=first_of_color(color);
+        vect.push_back(m_symbols[index]);
+        m_symbols[index]=filler;
+    }
+
+    delete filler;
+}
+
+void EString::mix_colors_evenly()
+{
+    // Pointer to blank ESymbol
+    ESymbol* filler=new ESymbol;
+    // Temporary vector to contain rearranged items from m_symbols
+    QVector<ESymbol*> temp(m_symbols.size());
+
+    int index=-1;
+    for(int i=0; i<temp.size(); i++)
+    {
+        // Iterate through colors based on position in temp
+        int color=(i%COLOR_COUNT)+1;
+        // Position of first item in m_symbols of the given color
+        index=first_of_color(color);
+        while(index<0)
+        {
+            index=first_of_color(color);
+            color=next_color(color);
+        }
+        // Copy item from m_symbols to temp at current position
+        temp[i]=m_symbols[index];
+        // Replace item in m_symbols with blank filler item,
+        // so that first_of_color() doesn't return its index again
+        m_symbols[index]=filler;
+    }
+    m_symbols=temp;		// Copy temp to m_symbols
+    delete filler;	// Reclaim memory from temporary filler item
+}
+
+void EString::make_uneven()
+{
+    // Based on vector size, get number of times to swap a random pair of items
+    int swap_count=m_symbols.size()/(COLOR_COUNT+1);
+
+    // Swap random items that many times
+    for(int i=0; i< swap_count; i++)
+        swap_random_index();
+}
+
+int EString::random_color(int color)
+{
+    int new_color=(rand()%COLOR_COUNT)+1;	// Generate random color number
+
+    // If new color is same as old color, this is the color's second use
+    if(new_color==color)
+        new_color*=(-1);	// Make new color negative to indicate second use
+    // If new color matches negative color, this color has been used twice in a row
+    else if(new_color==(-color))
+        new_color=random_color(color);	// Do over until a different color is assigned
+
+    return new_color;
+}
+
+void EString::swap_items(int first, int second)
+{
+    // Exit function if first and second indexes are the same
+    if(first==second) return;
+
+    ESymbol* temp=m_symbols[first];
+    m_symbols[first]=m_symbols[second];
+    m_symbols[second]=temp;
+}
+
+int EString::next_color(int color)
+{
+    if(color==COLOR_COUNT) color=0;
+    color++;
+    return color;
+}
+
+void EString::swap_random_index(int iteration)
+{
+    // Exit function if it recurses more than the given number of times
+    if(iteration>m_symbols.size()) return;
+
+    srand(time(nullptr));	// Initialize random number generator
+    // Get random index that is not the first or last item in vector
+    int index=rand()%(m_symbols.size()-2)+1;
+
+    // If index is directly after the first item, move forward one
+    if((index-1)==0)index++;
+
+    // If this item is the same color as the one before it, redo this function
+    if(m_symbols[index]->get_color()==m_symbols[index-1]->get_color())
+        swap_random_index(iteration+1);
+    // Switch item at index with the one before it
+    else swap_items(index, index-1);
+}
+
+void EString::move_to_end(int index)
+{
+    for(int i=index; i<m_symbols.size()-1; i++)
+        swap_items(i, i+1);
+}
+
+QString EString::as_text()
+{
+    QString text="";	// Create empty string
+
+    // Append contents of each ESymbol* in m_symbols to text
+    for(int i=0; i<m_symbols.size(); i++)
+        text+=m_symbols[i]->as_text();
+
+    return text;
+}
+
+QString EString::color_listing()
+{
+    QString output="";
+    for(int i=0; i<m_symbols.size(); i++)
+    {
+        if(m_symbols[i]->get_color()==1)
+            output+="Y";
+        else if(m_symbols[i]->get_color()==2)
+            output+="B";
+        else if(m_symbols[i]->get_color()==3)
+            output+="R";
+    }
+    return output;
+}
 
 #if 0
+// Rejected version of function
+void EString::scramble()
+{
     // Blank ESymbol* to replace items in m_symbols that have already been copied
     ESymbol* filler=new ESymbol;
 
@@ -190,115 +357,8 @@ void EString::scramble()
     // Merge scrambled portion of vector with Red portion,
     // but keep first and last items the same
     merge_ranges(1,blue_end+1,m_symbols.size()-2);
-#endif
 }
 
-// Unfinished function (not tested for bugs)
-void EString::unscramble()
-{
-    // Create new vector the same size as m_symbols
-    QVector<ESymbol*> sorted(m_symbols.size());
-
-    // Add each yellow ESymbol* from m_symbols to sorted
-    for(int i=0; i<m_symbols.size(); i++)
-        sorted.push_back(m_symbols[first_of_color_after(YELLOW,i)]);
-
-    // Add each blue ESymbol* from m_symbols to sorted
-    for(int i=0; i<m_symbols.size(); i++)
-        sorted.push_back(m_symbols[first_of_color_after(BLUE,i)]);
-
-    // Add each red ESymbol* from m_symbols to sorted
-    for(int i=0; i<m_symbols.size(); i++)
-        sorted.push_back(m_symbols[first_of_color_after(RED,i)]);
-
-    // Copy sorted vector to m_symbols
-    m_symbols=sorted;
-}
-
-void EString::mix_colors_evenly()
-{
-    // Pointer to blank ESymbol
-    ESymbol* filler=new ESymbol;
-    // Temporary vector to contain rearranged items from m_symbols
-    QVector<ESymbol*> temp(m_symbols.size());
-
-    for(int i=0; i<temp.size(); i++)
-    {
-        // Iterate through colors based on position in temp
-        int color=(i+1)%COLOR_COUNT+1;
-        // Position of first item in m_symbols of the given color
-        int index=first_of_color(color);
-        // Copy item from m_symbols to temp at current position
-        temp[i]=m_symbols[index];
-        // Replace item in m_symbols with blank filler item,
-        // so that first_of_color() doesn't return its index again
-        m_symbols[index]=filler;
-    }
-    m_symbols=temp;		// Copy temp to m_symbols
-    delete filler;	// Reclaim memory from temporary filler item
-}
-
-void EString::make_uneven()
-{
-    // Based on vector size, get number of times to swap a random pair of items
-    int swap_count=m_symbols.size()/(COLOR_COUNT+1);
-
-    // Swap random items that many times
-    for(int i=0; i< swap_count; i++)
-        swap_random_index();
-}
-
-int EString::random_color(int color)
-{
-    int new_color=(rand()%COLOR_COUNT)+1;	// Generate random color number
-
-    // If new color is same as old color, this is the color's second use
-    if(new_color==color)
-        new_color*=(-1);	// Make new color negative to indicate second use
-    // If new color matches negative color, this color has been used twice in a row
-    else if(new_color==(-color))
-        new_color=random_color(color);	// Do over until a different color is assigned
-
-//QMessageBox::information(nullptr,"",QString::number(new_color));
-    return new_color;
-}
-
-void EString::swap_items(int first, int second)
-{
-    // Exit function if first and second indexes are the same
-    if(first==second) return;
-
-    ESymbol* temp=m_symbols[first];
-    m_symbols[first]=m_symbols[second];
-    m_symbols[second]=temp;
-}
-
-void EString::swap_random_index(int iteration)
-{
-    // Exit function if it recurses more than the given number of times
-    if(iteration>m_symbols.size()) return;
-
-    srand(time(nullptr));	// Initialize random number generator
-    // Get random index that is not the first or last item in vector
-    int index=rand()%(m_symbols.size()-2)+1;
-
-    // If index is directly after the first item, move forward one
-    if((index-1)==0)index++;
-
-    // If this item is the same color as the one before it, redo this function
-    if(m_symbols[index]->get_color()==m_symbols[index-1]->get_color())
-        swap_random_index(iteration+1);
-    // Switch item at index with the one before it
-    else swap_items(index, index-1);
-}
-
-void EString::move_to_end(int index)
-{
-    for(int i=index; i<m_symbols.size()-1; i++)
-        swap_items(i, i+1);
-}
-
-#if 0
 // Unfinished function - need debugging
 void EString::merge_ranges(int begin, int range2_begin, int end)
 {
@@ -362,15 +422,3 @@ int EString::prevent_pattern(int &count, int size_diff)
     return num;
 }
 #endif
-
-QString EString::as_text()
-{
-    QString text="";	// Create empty string
-
-    // Append contents of each ESymbol* in m_symbols to text
-    for(int i=0; i<m_symbols.size(); i++)
-        text+=m_symbols[i]->as_text();
-
-    return text;
-}
-

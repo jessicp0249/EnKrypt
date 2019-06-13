@@ -54,33 +54,37 @@ public:
     void scramble();
     // Moves ESymbols* to their original position in m_symbols
     void unscramble();
-    // Scramble the ESymbols in the range from begin to range1_end with the ESymbols
-    // in the range from range2_begin and end
-//    void merge_ranges(int begin, int range2_begin, int end);
-
+    void copy_color_to(QVector<ESymbol*> &vect, int color);
     void mix_colors_evenly();
     void make_uneven();
-
     int random_color(int color=0);
     void swap_items(int first, int second);
+    int next_color(int color);
 
     // @param iteration Increments each time function recurses, so that
     // function can prevent endless recursion
     void swap_random_index(int iteration=0);
     void move_to_end(int index);
 
+    // Returns a QString interpretation of m_symbols
+    QString as_text();
+
+    // Debugging function
+    QString color_listing();
+
+    // Scramble the ESymbols in the range from begin to range1_end with the ESymbols
+    // in the range from range2_begin and end
+//    void merge_ranges(int begin, int range2_begin, int end);
+
     // Copies last element of the given vector to the given index of m_symbols,
     // and then removes that element from the first vector
 //    void add_last_to(QVector<ESymbol*> &vect, int index);
+
     // Increments count if num is even; else, decrements count.
     // Returns 1 if count is less than -1.
     // Returns -1 if count is greater than 1.
     // Returns zero if count is -1, zero, or 1.
 //    int prevent_pattern(int &count, int size_diff);
-
-    // Returns a QString interpretation of m_symbols
-    QString as_text();
-
 };
 
 #endif // ESTRING_H

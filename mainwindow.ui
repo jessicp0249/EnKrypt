@@ -32,6 +32,13 @@
      </widget>
     </item>
     <item>
+     <widget class="QLabel" name="warning_label">
+      <property name="text">
+       <string>You must enter at least one non-blank character.</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QWidget" name="widget_2" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>

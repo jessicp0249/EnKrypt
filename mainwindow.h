@@ -21,6 +21,8 @@ public:
 private slots:
     void on_encryptButton_clicked();
 
+    void on_decryptButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     EString* m_message;
