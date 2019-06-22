@@ -39,7 +39,9 @@ void EString::to_symbols(QString text)
     QChar current=text.at(0);
     // Make first character in text the first ESymbol in m_symbols
     add_symbol(current);
-    for(int i=1; i<text.size(); i++)
+    int max=text.size();    // Get length of given string
+
+    for(int i=1; i<max; i++)
     {
         current=text.at(i);
         if(!current.isLetter() && !current.isNumber())
@@ -57,9 +59,11 @@ QString EString::format(QString text)
 {
     // Make all characters in text lowercase
     text=text.toLower();
-
+    // Capitalize first character
     QString result=text.at(0).toUpper();
-    for(int i=1; i<text.size(); i++)
+    int max=text.size();    // Get length of given string
+
+    for(int i=1; i<max; i++)
     {
         // If current character is first letter in a word, capitalize it
         if(text.at(i).isLetter() && text.at(i-1).isSpace())
@@ -73,17 +77,18 @@ QString EString::format(QString text)
 
 void EString::set_colors()
 {
+    int max=m_symbols.size();    // Length of m_symbols
     int color=1;	// Current color
     // Number of ESymbols to be assigned per color
-    int interval=m_symbols.size()/COLOR_COUNT;
+    int interval=max/COLOR_COUNT;
     // Interval must be at least one
     if(interval<1) interval=1;
     // If items in m_symbols don't divide evenly among colors,
     // increase interval to distribute remainder
-    if(m_symbols.size()%COLOR_COUNT>0) interval++;
+    if(max%COLOR_COUNT>0) interval++;
 
     // Assign each color to about the same number of ESymbols
-    for(int i=0; i<m_symbols.size(); i++)
+    for(int i=0; i<max; i++)
     {
         // Assign current color to current item in m_symbols
         m_symbols[i]->set_color(color);
@@ -94,7 +99,7 @@ void EString::set_colors()
             color++;
             // If remainder items have been distributed, decrease interval.
             // (This operation will occur at most ONCE per function call.)
-            if(color==(m_symbols.size()%interval))
+            if(color==(max%interval))
                 interval--;
         }
     }
@@ -196,13 +201,14 @@ QMessageBox::information(nullptr,"","Copying color "+QString::number(color));
 
 void EString::mix_colors_evenly()
 {
+    int max = m_symbols.size();
     // Pointer to blank ESymbol
     ESymbol* filler=new ESymbol;
     // Temporary vector to contain rearranged items from m_symbols
-    QVector<ESymbol*> temp(m_symbols.size());
+    QVector<ESymbol*> temp(max);
 
     int index=-1;
-    for(int i=0; i<temp.size(); i++)
+    for(int i=0; i<max; i++)
     {
         // Iterate through colors based on position in temp
         int color=(i%COLOR_COUNT)+1;
@@ -274,10 +280,10 @@ void EString::swap_random_index(int iteration)
     int index=rand()%(m_symbols.size()-2)+1;
 
     // If index is directly after the first item, move forward one
-    if((index-1)==0)index++;
+    if((index-1) == 0)index++;
 
     // If this item is the same color as the one before it, redo this function
-    if(m_symbols[index]->get_color()==m_symbols[index-1]->get_color())
+    if(m_symbols[index]->get_color() == m_symbols[index-1]->get_color())
         swap_random_index(iteration+1);
     // Switch item at index with the one before it
     else swap_items(index, index-1);
@@ -285,16 +291,19 @@ void EString::swap_random_index(int iteration)
 
 void EString::move_to_end(int index)
 {
-    for(int i=index; i<m_symbols.size()-1; i++)
+    // Index of last item in m_symbols
+    int max=m_symbols.size()-1;
+    for(int i=index; i<max; i++)
         swap_items(i, i+1);
 }
 
 QString EString::as_text()
 {
     QString text="";	// Create empty string
+    int max=m_symbols.size();	// Get size of m_symbols
 
     // Append contents of each ESymbol* in m_symbols to text
-    for(int i=0; i<m_symbols.size(); i++)
+    for(int i=0; i<max; i++)
         text+=m_symbols[i]->as_text();
 
     return text;
@@ -303,7 +312,8 @@ QString EString::as_text()
 QString EString::color_listing()
 {
     QString output="";
-    for(int i=0; i<m_symbols.size(); i++)
+    int max=m_symbols.size();	// Get size of m_symbols
+    for(int i=0; i<max; i++)
     {
         if(m_symbols[i]->get_color()==1)
             output+="Y";
